@@ -74,7 +74,9 @@ jobs:
         run: |
           # CVE-2026-3219 affects pip itself (no fix released yet); ignore it so
           # that vulnerabilities in actual project dependencies still fail CI.
-          uv run pip-audit --strict --ignore-vuln CVE-2026-3219
+          # Export only third-party deps (skip the project itself, which isn't on PyPI yet).
+          uv export --format requirements-txt --no-emit-project --no-hashes --all-groups > requirements-audit.txt
+          uv run pip-audit --strict --ignore-vuln CVE-2026-3219 -r requirements-audit.txt
 
   release:
     name: Release
