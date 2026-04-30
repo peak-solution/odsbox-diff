@@ -1,6 +1,13 @@
 """odsbox-diff: compare two ASAM ODS hierarchy instances."""
 
-from .api import collect_to_file, diff_file_to_file, diff_file_to_server, diff_server_to_server
+__version__ = "0.1.0"
+
+from .api import (
+    collect_to_file,
+    diff_file_to_file,
+    diff_file_to_server,
+    diff_server_to_server,
+)
 from .diff import collect_ods_test, diff_ods_tests
 from .ods_diff_hierarchy import (
     collect,

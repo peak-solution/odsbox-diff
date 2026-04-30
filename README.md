@@ -1,5 +1,10 @@
 # odsbox-diff
 
+[![Build](https://github.com/peak-solution/odsbox-diff/actions/workflows/build.yml/badge.svg)](https://github.com/peak-solution/odsbox-diff/actions/workflows/build.yml)
+[![PyPI version](https://img.shields.io/pypi/v/odsbox-diff.svg)](https://pypi.org/project/odsbox-diff/)
+[![Python versions](https://img.shields.io/pypi/pyversions/odsbox-diff.svg)](https://pypi.org/project/odsbox-diff/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 A CLI and Python library to compare two instance hierarchies on one or two ASAM ODS
 servers and write a structured diff result. Built on
 [odsbox](https://pypi.org/project/odsbox/) for ODS access and

@@ -1,18 +1,36 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "odsbox-diff"
 version = "0.1.0"
-description = "Add your description here"
+description = "Compare two ASAM ODS hierarchy instances and write a structured diff result."
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
+authors = [
+    { name = "A. Krantz", email = "a.krantz@peak-solution.de" },
+]
+keywords = ["ASAM", "ODS", "measurement data", "diff", "regression testing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "deepdiff>=9.0.0",
     "keyring>=24.0.0",
     "odsbox[oidc]>=1.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/peak-solution/odsbox-diff"
+Repository = "https://github.com/peak-solution/odsbox-diff"
+Issues = "https://github.com/peak-solution/odsbox-diff/issues"
+Changelog = "https://github.com/peak-solution/odsbox-diff/releases"
 
 [project.scripts]
 odsbox-diff = "odsbox_diff.diff:cli"
@@ -21,11 +39,17 @@ odsbox-diff = "odsbox_diff.diff:cli"
 dev = [
     "mypy>=1.20.2",
     "pandas-stubs>=3.0.0.260204",
+    "pip-audit>=2.9.0",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
+    "python-semantic-release>=9.0.0",
     "ruff>=0.15.12",
     "types-requests>=2.33.0.20260408",
 ]
+
+[build-system]
+requires = ["uv_build>=0.6,<0.12"]
+build-backend = "uv_build"
 
 [tool.mypy]
 strict = true
@@ -37,5 +61,15 @@ line-length = 120
 testpaths = ["tests"]
 pythonpath = ["src"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/odsbox_diff"]
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["src/odsbox_diff/__init__.py:__version__"]
+tag_format = "v{version}"
+build_command = "uv build"
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = ["^Merge", "^chore"]
