@@ -1,0 +1,40 @@
+# odsbox-diff configuration — OIDC (interactive browser login) authentication example
+#
+# Usage:
+#   uv run odsbox-diff --config config.oidc.toml -entity TestStep -id1 2 -id2 3
+
+# ── Server (connection + authentication combined) ────────────────────
+[server]
+url = "https://server:8015/api"
+verify_certificate = true
+method = "oidc"
+client_id = "14df520f-f6b0-4135-be1b-bff3f5cc474c"
+redirect_uri = "http://127.0.0.1:1234"
+redirect_url_allow_insecure = true    # needed for localhost redirect
+scope = ["openid", "profile"]
+login_timeout = 60
+webfinger_path_prefix = "/ods"        # optional, for non-standard WebFinger paths
+# authorization_endpoint and token_endpoint are auto-discovered via WebFinger
+# unless explicitly set here:
+# authorization_endpoint = "https://auth.example.com/authorize"
+# token_endpoint = "https://auth.example.com/token"
+# client_secret is optional for OIDC; if needed, store it in keyring:
+#   python -c "import keyring; keyring.set_password('odsbox-diff', 'https://auth.example.com/token:14df520f-f6b0-4135-be1b-bff3f5cc474c', 'YOUR_SECRET')"
+
+# ── Diff defaults ────────────────────────────────────────────────────
+[defaults]
+bulk_progress_bar = true
+no_bulk = false
+dump_dictionaries = false
+result_file = "diff_ods_tests_result.json"
+verbose = false
+
+exclude_regex_paths = [
+    "\\.pdf'\\]\\['TestStepFile\\.(FileChecksum|Size)'\\]$",
+    "\\['TestStep.GUID'\\]$",
+    "\\['TestStepFile\\.(Location|DateModified)'\\]$",
+    "\\['ResultParameter'\\]\\['(Source|Raw)TestStepGUID'\\]\\['ResultParameter\\.Value'\\]$",
+]
+exclude_paths = []
+# Entity names whose relation IDs are resolved to human-readable names in the diff output.
+cached_related = ["AoUnit", "AoQuantity"]

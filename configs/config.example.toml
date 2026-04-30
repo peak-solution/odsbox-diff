@@ -1,0 +1,72 @@
+# odsbox-diff configuration — basic authentication example
+# Copy this file and adjust values for your environment.
+#
+# Usage (single server):
+#   uv run odsbox-diff --config config.toml -entity TestStep -id1 2 -id2 3
+#
+# Usage (compare across two named servers):
+#   uv run odsbox-diff --config config.toml -entity TestStep -id1 2 -id2 3 --server1 production --server2 staging
+
+# ── Single server ────────────────────────────────────────────────────
+# Use [server] when comparing two instances on the same server.
+[server]
+url = "http://localhost:57481/api"
+verify_certificate = false          # set true for production with valid TLS
+method = "basic"
+username = "admin"
+# password = "admin"               # prefer keyring over plaintext!
+# To store in keyring:
+#   python -c "import keyring; keyring.set_password('odsbox-diff', 'http://localhost:57481/api:admin', 'admin')"
+
+# ── Multiple named servers ───────────────────────────────────────────
+# Use [servers.<name>] to define two or more servers.
+# Pick them at runtime with --server1 <name> --server2 <name>.
+# If only one server is defined below, --server1/--server2 are not required.
+#
+# [servers.production]
+# url = "https://prod.example.com/api"
+# verify_certificate = true
+# method = "basic"
+# username = "admin"
+#
+# [servers.staging]
+# url = "https://staging.example.com/api"
+# verify_certificate = false
+# method = "basic"
+# username = "admin"
+
+
+# ── Diff defaults ────────────────────────────────────────────────────
+# These replace the DIFF_OPTIONS formerly hard-coded in the batch file.
+# CLI flags (e.g. -erp, -bpb) extend / override these values.
+[defaults]
+bulk_progress_bar = false
+no_bulk = false
+dump_dictionaries = false
+result_file = "diff_ods_tests_result.json"
+verbose = false
+
+exclude_regex_paths = [
+    "\\.pdf'\\]\\['TestStepFile\\.(FileChecksum|Size)'\\]$",
+    "\\['TestStep.GUID'\\]$",
+    "\\['TestStepFile\\.(Location|DateModified)'\\]$",
+    "\\['ResultParameter'\\]\\['(Source|Raw)TestStepGUID'\\]\\['ResultParameter\\.Value'\\]$",
+]
+exclude_paths = []
+# Entity names whose relation IDs are resolved to human-readable names in the diff output.
+cached_related = ["AoUnit", "AoQuantity"]
+
+[queries.first]
+condition= """{
+    "name": "My first test step",
+    "parent_test.name": "My Test",
+    "parent_test.parent_test.name": "My Sub Project",
+    "parent_test.parent_test.parent_test.name": "My Project"
+}"""
+[queries.second]
+condition= """{
+    "name": "My second test step",
+    "parent_test.name": "My Test",
+    "parent_test.parent_test.name": "My Sub Project",
+    "parent_test.parent_test.parent_test.name": "My Project"
+}"""

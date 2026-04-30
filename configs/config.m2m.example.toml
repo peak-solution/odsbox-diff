@@ -1,0 +1,34 @@
+# odsbox-diff configuration — M2M (machine-to-machine) authentication example
+#
+# Usage:
+#   uv run odsbox-diff --config config.m2m.toml -entity TestStep -id1 2 -id2 3
+
+# ── Server (connection + authentication combined) ────────────────────
+[server]
+url = "https://my.asam.server.com:8443/api"
+verify_certificate = true
+method = "m2m"
+client_id = "f0a8cec0-e980-48c4-9898-8a11f40da518"
+token_endpoint = "https://auth.example.com/realms/myrealm/protocol/openid-connect/token"
+scope = ["machine2machine"]
+# client_secret is intentionally omitted — it will be retrieved from keyring.
+# To store in keyring:
+#   python -c "import keyring; keyring.set_password('odsbox-diff', 'https://auth.example.com/realms/myrealm/protocol/openid-connect/token:f0a8cec0-e980-48c4-9898-8a11f40da518', 'YOUR_SECRET')"
+
+# ── Diff defaults ────────────────────────────────────────────────────
+[defaults]
+bulk_progress_bar = true
+no_bulk = false
+dump_dictionaries = false
+result_file = "diff_ods_tests_result.json"
+verbose = false
+
+exclude_regex_paths = [
+    "\\.pdf'\\]\\['TestStepFile\\.(FileChecksum|Size)'\\]$",
+    "\\['TestStep.GUID'\\]$",
+    "\\['TestStepFile\\.(Location|DateModified)'\\]$",
+    "\\['ResultParameter'\\]\\['(Source|Raw)TestStepGUID'\\]\\['ResultParameter\\.Value'\\]$",
+]
+exclude_paths = []
+# Entity names whose relation IDs are resolved to human-readable names in the diff output.
+cached_related = ["AoUnit", "AoQuantity"]

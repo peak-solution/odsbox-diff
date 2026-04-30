@@ -1,0 +1,9 @@
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.*_cache/
+diff*result*.json
+!.vscode/
+.coverage

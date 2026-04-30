@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "odsbox-diff"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "deepdiff>=9.0.0",
+    "keyring>=24.0.0",
+    "odsbox[oidc]>=1.2.0",
+]
+
+[project.scripts]
+odsbox-diff = "odsbox_diff.diff:cli"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.2",
+    "pandas-stubs>=3.0.0.260204",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.12",
+    "types-requests>=2.33.0.20260408",
+]
+
+[tool.mypy]
+strict = true
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/odsbox_diff"]
