@@ -88,9 +88,9 @@ class Collector:
             }
         )
         log.debug("Found %s submatrices related to your test", sub_matrices.shape[0])
-        sub_matrices.columns = ["id", "measurement", "number_of_rows"]
+        sub_matrices.columns = pd.Index(["id", "measurement", "number_of_rows"])
         local_column_entity = self._mc.entity_by_base_name("AoLocalColumn")
-        exception_errors = []
+        exception_errors: list[str] = []
         log.debug("Load bulk data from ASAM ODS server")
         for sub_matrix_index, submatrix_row in enumerate(sub_matrices.itertuples()):
             if show_progress:
@@ -108,21 +108,21 @@ class Collector:
                         },
                     }
                 )
-                bulk_data.columns = ["id", "generation_parameters", "values", "flags"]
+                bulk_data.columns = pd.Index(["id", "generation_parameters", "values", "flags"])
                 for _, row in bulk_data.iterrows():
                     hash_value = self._hash_pandas_row(row)
                     local_column_id = row.id
                     parent_dictionary = lookup.get((local_column_entity.name, local_column_id), None)
                     if parent_dictionary is None:
                         raise ValueError("parent wasn't added")
-                    parent_dictionary["__BULK_HASH"] = hash_value
+                    parent_dictionary["_BULK_HASH"] = hash_value
             except HTTPError as e:
                 error_text = f"Unable to retrieve bulk for Submatrix {submatrix_id}: {e}"
                 exception_errors.append(error_text)
                 sub_matrix_dictionary = lookup.get((sub_matrix_entity.name, submatrix_id), None)
                 if sub_matrix_dictionary is None:
                     raise ValueError("parent wasn't added")
-                sub_matrix_dictionary["__BULK_HASH_CALCULATION_ERROR"] = error_text
+                sub_matrix_dictionary["_BULK_HASH_CALCULATION_ERROR"] = error_text
         log.debug("Load bulk data from ASAM ODS server finished")
         for exception_error in exception_errors:
             log.error(exception_error)
@@ -487,9 +487,9 @@ class Collector:
         id_entry = f"{entity.name}.{self._mc.attribute(entity, 'id').name}"
         resolved_root_id: int = result[entity.name][id_entry]
 
-        instances_to_collect = []
+        instances_to_collect: list[tuple[str, str, str | None]] = []
 
-        path_to_root_instance = None
+        path_to_root_instance: str | None = None
 
         current_entity = entity
         current_children_relation = self._mc.relation_no_throw(current_entity, "children")
