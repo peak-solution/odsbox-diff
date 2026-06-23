@@ -72,4 +72,4 @@ match = "main"
 prerelease = false
 
 [tool.semantic_release.changelog]
-exclude_commit_patterns = ["^Merge", "^chore"]
+exclude_commit_patterns = ["^Merge", "^chore", "^docs", "^style", "^refactor", "^perf", "^test", "^build", "^ci"]
