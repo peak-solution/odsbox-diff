@@ -97,21 +97,37 @@ class Collector:
                 self._print_progress_bar(sub_matrix_index + 1, sub_matrices.shape[0], "Bulk:", fill="*")
             submatrix_id = submatrix_row.id
             try:
+                attribute_id = self._mc.attribute_no_throw(local_column_entity, "id")
+                attribute_values = self._mc.attribute_no_throw(local_column_entity, "values")
+                attribute_generation_parameters = self._mc.attribute_no_throw(
+                    local_column_entity, "generation_parameters"
+                )
+                attribute_flags = self._mc.attribute_no_throw(local_column_entity, "flags")
+                if attribute_id is None or attribute_values is None:
+                    log.warning(
+                        "AoLocalColumn attributes 'id' or 'values' not found. Skipping bulk hash for submatrix %s.",
+                        submatrix_id,
+                    )
+                    continue
+
+                attributes_bulk: dict[str, int] = {}
+                attributes_bulk[attribute_id.name] = 1
+                if attribute_generation_parameters is not None:
+                    attributes_bulk[attribute_generation_parameters.name] = 1
+                attributes_bulk[attribute_values.name] = 1
+                if attribute_flags is not None:
+                    attributes_bulk[attribute_flags.name] = 1
+
                 bulk_data = self._query_data(
                     {
                         local_column_entity.name: {"submatrix": submatrix_id},
-                        "$attributes": {
-                            "id": 1,
-                            "generation_parameters": 1,
-                            "values": 1,
-                            "flags": 1,
-                        },
+                        "$attributes": attributes_bulk,
                     }
                 )
-                bulk_data.columns = pd.Index(["id", "generation_parameters", "values", "flags"])
+                id_column_name = f"{local_column_entity.name}.{attribute_id.name}"
                 for _, row in bulk_data.iterrows():
-                    hash_value = self._hash_pandas_row(row)
-                    local_column_id = row.id
+                    local_column_id = row[id_column_name]
+                    hash_value = self._hash_pandas_row(row.drop(labels=[id_column_name], errors="ignore"))
                     parent_dictionary = lookup.get((local_column_entity.name, local_column_id), None)
                     if parent_dictionary is None:
                         raise ValueError("parent wasn't added")
