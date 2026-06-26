@@ -1,6 +1,6 @@
 [project]
 name = "odsbox-diff"
-version = "1.0.1"
+version = "1.0.2"
 description = "Compare two ASAM ODS hierarchy instances and write a structured diff result."
 readme = "README.md"
 license = "Apache-2.0"

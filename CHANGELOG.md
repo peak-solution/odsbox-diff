@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.2 (2026-06-26)
+
+### Bug Fixes
+
+- Bulk data hash generation is broken ([#12](https://github.com/peak-solution/odsbox-diff/pull/12),
+  [`00ec02d`](https://github.com/peak-solution/odsbox-diff/commit/00ec02dd1be583eef8b51de582682021955204fc))
+
+
 ## v1.0.1 (2026-06-23)
 
 ### Bug Fixes
