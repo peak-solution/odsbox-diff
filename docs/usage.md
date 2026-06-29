@@ -39,6 +39,16 @@ environment:
 | `config.m2m.example.toml` | OAuth2 machine-to-machine |
 | `config.oidc.example.toml` | OIDC (interactive browser login) |
 
+Or generate a new starter config directly:
+
+```powershell
+uv run odsbox-diff create-config
+```
+
+By default this writes `./odsbox-diff.config.toml` with three use-case server
+entries (`default=basic`, `production=m2m`, `staging=oidc`) and two query placeholders
+(`queries.first`, `queries.second`).
+
 ### Keyring secrets
 
 Rather than storing secrets in the config file, store them in your OS keyring
@@ -196,6 +206,27 @@ uv run odsbox-diff collect `
 
 ---
 
+## CLI: Create Config
+
+The `create-config` subcommand creates a new TOML config from the three example
+files in `configs/`.
+
+```powershell
+uv run odsbox-diff create-config
+```
+
+### Create-config flags
+
+| Flag | Description |
+| --- | --- |
+| `-o`, `--output` | Output path (default: `./odsbox-diff.config.toml`). |
+| `--force` | Overwrite output file if it already exists. |
+| `--single-auth {basic,m2m,oidc}` | Generate only one server section (`default`/`production`/`staging`). |
+| `--with-queries` / `--no-queries` | Include or skip `queries.first` and `queries.second`. |
+| `--include-example-comments` / `--minimal` | Verbose guided output or compact output without comments. |
+
+---
+
 ## Exit Codes
 
 | Code | Meaning |
@@ -213,6 +244,9 @@ uv run odsbox-diff collect `
 
 Either a single `[server]` table or one `[servers.<name>]` table per named
 server.
+
+For single-server usage, `[servers.default]` is also valid and behaves like
+`[server]`.
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |

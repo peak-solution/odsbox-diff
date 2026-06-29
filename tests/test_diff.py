@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from odsbox_diff.connection.config import AuthMethod, ServerConfig
-from odsbox_diff.diff import _parse_id_or_file, _parse_server_id, collect_ods_test, diff_ods_tests
+from odsbox_diff.diff import (
+    _cli_create_config,
+    _parse_id_or_file,
+    _parse_server_id,
+    collect_ods_test,
+    create_config_file,
+    diff_ods_tests,
+)
 
 
 @pytest.fixture
@@ -322,3 +330,87 @@ class TestCollectOdsTest:
             )
 
         assert rc == 100
+
+
+class TestCreateConfig:
+    def test_create_config_default_generates_three_servers_and_queries(self, tmp_path: Path) -> None:
+        output = tmp_path / "generated.toml"
+
+        created = create_config_file(str(output))
+        assert created == output
+
+        text = output.read_text(encoding="utf-8")
+        assert "--config generated.toml" in text
+        assert "exclude_regex_paths = [\n" in text
+        assert "[servers.default]\nurl =" in text
+        assert '# password = "admin"               # prefer keyring over plaintext!' in text
+        assert "#   keyring set odsbox-diff http://localhost:57481/api:admin" in text
+        assert (
+            "#   keyring set odsbox-diff https://auth.example.com/realms/myrealm/protocol/openid-connect/token:f0a8cec0-e980-48c4-9898-8a11f40da518"
+            in text
+        )
+        assert "# client_secret can be stored in keyring when token_endpoint is configured." in text
+        assert "# Key format: <token_endpoint>:<client_id>" in text
+
+        raw = tomllib.loads(text)
+        assert set(raw["servers"].keys()) == {"default", "production", "staging"}
+        assert raw["servers"]["default"]["method"] == "basic"
+        assert raw["servers"]["production"]["method"] == "m2m"
+        assert raw["servers"]["staging"]["method"] == "oidc"
+        assert "defaults" in raw
+        assert set(raw["queries"].keys()) == {"first", "second"}
+
+    def test_create_config_single_auth_minimal_no_queries(self, tmp_path: Path) -> None:
+        output = tmp_path / "single-auth.toml"
+
+        create_config_file(
+            str(output),
+            single_auth="m2m",
+            with_queries=False,
+            include_example_comments=False,
+        )
+
+        text = output.read_text(encoding="utf-8")
+        assert "#" not in text
+
+        raw = tomllib.loads(text)
+        assert set(raw["servers"].keys()) == {"production"}
+        assert raw["servers"]["production"]["method"] == "m2m"
+        assert "queries" not in raw
+
+    def test_create_config_minimal_multiline_defaults_and_conditions(self, tmp_path: Path) -> None:
+        output = tmp_path / "minimal.toml"
+
+        create_config_file(
+            str(output),
+            include_example_comments=False,
+            with_queries=True,
+        )
+
+        text = output.read_text(encoding="utf-8")
+        assert "exclude_regex_paths = [\n" in text
+        assert "[queries.first]\ncondition = '''{\n" in text
+
+        raw = tomllib.loads(text)
+        assert "exclude_regex_paths" in raw["defaults"]
+        assert "queries" in raw
+
+    def test_create_config_force_required_for_overwrite(self, tmp_path: Path) -> None:
+        output = tmp_path / "existing.toml"
+        output.write_text('[defaults]\nresult_file = "x.json"\n', encoding="utf-8")
+
+        with pytest.raises(FileExistsError):
+            create_config_file(str(output))
+
+        create_config_file(str(output), force=True, single_auth="basic")
+        raw = tomllib.loads(output.read_text(encoding="utf-8"))
+        assert set(raw["servers"].keys()) == {"default"}
+
+    def test_cli_create_config_existing_file_returns_exit_1(self, tmp_path: Path) -> None:
+        output = tmp_path / "existing.toml"
+        output.write_text("already there", encoding="utf-8")
+
+        with pytest.raises(SystemExit) as ex:
+            _cli_create_config(["--output", str(output)])
+
+        assert ex.value.code == 1

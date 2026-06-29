@@ -89,6 +89,33 @@ class TestParseConfig:
         app = _parse_config(raw_multi_server_config)
         assert set(app.servers.keys()) == {"prod", "staging"}
 
+    def test_servers_default_single_server(self) -> None:
+        app = _parse_config(
+            {
+                "servers": {
+                    "default": {
+                        "url": "http://localhost:8080/api",
+                        "method": "basic",
+                        "username": "admin",
+                        "password": "secret",
+                    }
+                }
+            }
+        )
+        assert set(app.servers.keys()) == {"default"}
+        assert app.servers["default"].url == "http://localhost:8080/api"
+
+    def test_servers_default_with_named_servers(self) -> None:
+        app = _parse_config(
+            {
+                "servers": {
+                    "default": {"url": "http://x", "username": "u", "password": "p"},
+                    "staging": {"url": "http://s", "username": "u", "password": "p"},
+                }
+            }
+        )
+        assert set(app.servers.keys()) == {"default", "staging"}
+
     def test_legacy_connection_authentication(self) -> None:
         raw = {
             "connection": {"url": "http://x", "verify_certificate": False},

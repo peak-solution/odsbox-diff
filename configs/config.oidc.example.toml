@@ -1,7 +1,7 @@
 # odsbox-diff configuration — OIDC (interactive browser login) authentication example
 #
 # Usage:
-#   uv run odsbox-diff --config config.oidc.toml -entity TestStep -id1 2 -id2 3
+#   uv run odsbox-diff --config config.oidc.example.toml -entity TestStep -id1 2 -id2 3
 
 # ── Server (connection + authentication combined) ────────────────────
 [server]
@@ -19,7 +19,7 @@ webfinger_path_prefix = "/ods"        # optional, for non-standard WebFinger pat
 # authorization_endpoint = "https://auth.example.com/authorize"
 # token_endpoint = "https://auth.example.com/token"
 # client_secret is optional for OIDC; if needed, store it in keyring:
-#   python -c "import keyring; keyring.set_password('odsbox-diff', 'https://auth.example.com/token:14df520f-f6b0-4135-be1b-bff3f5cc474c', 'YOUR_SECRET')"
+#   keyring set https://auth.example.com/token:14df520f-f6b0-4135-be1b-bff3f5cc474c
 
 # ── Diff defaults ────────────────────────────────────────────────────
 [defaults]

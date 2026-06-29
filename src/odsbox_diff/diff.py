@@ -4,6 +4,8 @@ import argparse
 import json
 import logging
 import sys
+import tomllib
+from pathlib import Path
 from typing import Any, cast
 
 import urllib3
@@ -15,6 +17,242 @@ from .ods_diff_hierarchy.collect import collect, load_collect_results, save_coll
 from .ods_diff_hierarchy.diff import diff_dictionaries, dump_diff_as_json
 
 urllib3.disable_warnings()
+
+_DEFAULT_CONFIG_OUTPUT = "./odsbox-diff.config.toml"
+_EXAMPLE_FILE_BY_AUTH: dict[str, str] = {
+    "basic": "config.example.toml",
+    "m2m": "config.m2m.example.toml",
+    "oidc": "config.oidc.example.toml",
+}
+_USE_CASE_NAME_BY_AUTH: dict[str, str] = {
+    "basic": "default",
+    "m2m": "production",
+    "oidc": "staging",
+}
+_SERVER_FIELD_ORDER = (
+    "url",
+    "verify_certificate",
+    "method",
+    "username",
+    "password",
+    "client_id",
+    "client_secret",
+    "token_endpoint",
+    "scope",
+    "redirect_uri",
+    "redirect_url_allow_insecure",
+    "authorization_endpoint",
+    "login_timeout",
+    "webfinger_path_prefix",
+)
+
+
+def _example_config_path(auth_method: str) -> Path:
+    root = Path(__file__).resolve().parents[2]
+    filename = _EXAMPLE_FILE_BY_AUTH[auth_method]
+    path = root / "configs" / filename
+    if not path.is_file():
+        raise FileNotFoundError(f"Example config file not found: {path}")
+    return path
+
+
+def _load_example_template(auth_method: str) -> dict[str, Any]:
+    template_path = _example_config_path(auth_method)
+    return tomllib.loads(template_path.read_text(encoding="utf-8"))
+
+
+def _toml_scalar(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        return json.dumps(value)
+    raise TypeError(f"Unsupported TOML scalar type: {type(value)!r}")
+
+
+def _toml_value(value: Any, *, multiline_lists: bool = False) -> str:
+    if isinstance(value, list):
+        if not value:
+            return "[]"
+        if multiline_lists:
+            lines = ["["]
+            for item in value:
+                lines.append(f"    {_toml_scalar(item)},")
+            lines.append("]")
+            return "\n".join(lines)
+        parts = ", ".join(_toml_scalar(v) for v in value)
+        return f"[{parts}]"
+    return _toml_scalar(value)
+
+
+def _template_server_section(template: dict[str, Any]) -> dict[str, Any]:
+    server_raw = template.get("server")
+    if isinstance(server_raw, dict):
+        return cast(dict[str, Any], server_raw)
+
+    servers_raw = template.get("servers")
+    if isinstance(servers_raw, dict):
+        default_raw = servers_raw.get("default")
+        if isinstance(default_raw, dict):
+            return cast(dict[str, Any], default_raw)
+
+    return {}
+
+
+def _secret_help_lines(auth: str, server_raw: dict[str, Any]) -> list[str]:
+    if auth == "basic":
+        url = cast(str, server_raw.get("url", "http://localhost:57481/api"))
+        username = cast(str, server_raw.get("username", "admin"))
+        return [
+            '# password = "admin"               # prefer keyring over plaintext!',
+            "# To store in keyring:",
+            f"#   keyring set odsbox-diff {url}:{username}",
+        ]
+
+    if auth in ("m2m", "oidc"):
+        token_endpoint = cast(str | None, server_raw.get("token_endpoint"))
+        client_id = cast(str, server_raw.get("client_id", "my-client-id"))
+        if token_endpoint:
+            return [
+                "# client_secret is intentionally omitted — it will be retrieved from keyring.",
+                "# To store in keyring:",
+                f"#   keyring set odsbox-diff {token_endpoint}:{client_id}",
+            ]
+        return [
+            "# client_secret can be stored in keyring when token_endpoint is configured.",
+            "# Key format: <token_endpoint>:<client_id>",
+            f"# Example client_id: {client_id}",
+        ]
+
+    return []
+
+
+def _server_keys_for_mode(server_raw: dict[str, Any], minimal: bool) -> list[str]:
+    if not minimal:
+        return [k for k in _SERVER_FIELD_ORDER if k in server_raw]
+
+    method = cast(str, server_raw.get("method", "basic"))
+    required = ["url", "verify_certificate", "method"]
+    if method == "basic":
+        required.extend(["username"])
+    elif method == "m2m":
+        required.extend(["client_id", "token_endpoint", "scope"])
+    elif method == "oidc":
+        required.extend(["client_id", "redirect_uri", "scope"])
+    return [k for k in required if k in server_raw]
+
+
+def _format_condition_block(condition: Any, minimal: bool) -> str:
+    if isinstance(condition, dict):
+        condition_text = json.dumps(condition, indent=4)
+    elif isinstance(condition, str):
+        try:
+            condition_text = json.dumps(json.loads(condition), indent=4)
+        except json.JSONDecodeError:
+            condition_text = condition
+    else:
+        condition_text = json.dumps(condition, indent=4)
+
+    return f"condition = '''{condition_text}'''"
+
+
+def _build_generated_config_text(
+    single_auth: str | None,
+    with_queries: bool,
+    include_example_comments: bool,
+    config_ref: str,
+) -> str:
+    selected_auth = [single_auth] if single_auth else ["basic", "m2m", "oidc"]
+    minimal = not include_example_comments
+    multiline_lists = True
+
+    templates = {auth: _load_example_template(auth) for auth in selected_auth}
+    defaults_raw = cast(dict[str, Any], _load_example_template("basic").get("defaults", {}))
+    queries_raw = cast(dict[str, Any], _load_example_template("basic").get("queries", {}))
+
+    lines: list[str] = []
+    if include_example_comments:
+        lines.extend(
+            [
+                "# odsbox-diff configuration file",
+                "#",
+                "# Usage (default server):",
+                f"#   uv run odsbox-diff --config {config_ref} -entity TestStep -id1 2 -id2 3",
+                "#",
+                "# Usage (compare across two named servers by id or named query):",
+                f"#   uv run odsbox-diff --config {config_ref} -entity TestStep -id1 production:2 -id2 staging:3",
+                f"#   uv run odsbox-diff --config {config_ref} -entity TestStep -id1 production:first -id2 staging:first",
+                "",
+            ]
+        )
+
+    for auth in selected_auth:
+        template = templates[auth]
+        server_raw = _template_server_section(template)
+        server_name = _USE_CASE_NAME_BY_AUTH[auth]
+        if include_example_comments:
+            lines.append(f"# {server_name} server ({auth} auth)")
+        lines.append(f"[servers.{server_name}]")
+        for key in _server_keys_for_mode(server_raw, minimal=minimal):
+            lines.append(f"{key} = {_toml_value(server_raw[key], multiline_lists=multiline_lists)}")
+        if include_example_comments:
+            lines.extend(_secret_help_lines(auth, server_raw))
+        lines.append("")
+
+    if include_example_comments:
+        lines.append("# Diff defaults")
+    lines.append("[defaults]")
+    for key in (
+        "bulk_progress_bar",
+        "no_bulk",
+        "dump_dictionaries",
+        "result_file",
+        "verbose",
+        "exclude_regex_paths",
+        "exclude_paths",
+        "cached_related",
+    ):
+        if key in defaults_raw:
+            lines.append(f"{key} = {_toml_value(defaults_raw[key], multiline_lists=multiline_lists)}")
+    lines.append("")
+
+    if with_queries:
+        for query_name in ("first", "second"):
+            query = cast(dict[str, Any] | None, queries_raw.get(query_name))
+            if not query or "condition" not in query:
+                continue
+            if include_example_comments:
+                lines.append(f"# Named query: {query_name}")
+            lines.append(f"[queries.{query_name}]")
+            lines.append(_format_condition_block(query["condition"], minimal=minimal))
+            lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def create_config_file(
+    output_path: str,
+    *,
+    force: bool = False,
+    single_auth: str | None = None,
+    with_queries: bool = True,
+    include_example_comments: bool = True,
+) -> Path:
+    output = Path(output_path)
+    if output.exists() and not force:
+        raise FileExistsError(f"Config file already exists: {output}. Use --force to overwrite.")
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    config_ref = output.name
+    content = _build_generated_config_text(
+        single_auth=single_auth,
+        with_queries=with_queries,
+        include_example_comments=include_example_comments,
+        config_ref=config_ref,
+    )
+    output.write_text(content, encoding="utf-8")
+    return output
 
 
 def _parse_id_string(id_string: str | int, queries: list[dict[str, Any]] | None) -> int | dict[str, Any] | str:
@@ -382,9 +620,12 @@ def cli() -> None:
     (``0`` no differences, ``100`` differences found, ``-1`` on uncaught
     exception, ``1`` on argument validation errors).
     """
-    # Dispatch to collect subcommand if requested
+    # Dispatch to collect/create-config subcommands if requested
     if len(sys.argv) > 1 and sys.argv[1] == "collect":
         _cli_collect(sys.argv[2:])
+        return
+    if len(sys.argv) > 1 and sys.argv[1] == "create-config":
+        _cli_create_config(sys.argv[2:])
         return
 
     parser = _build_parser()
@@ -614,6 +855,89 @@ def _build_collect_parser() -> argparse.ArgumentParser:
         help="Entity names whose IDs are resolved to names in the output.",
     )
     return parser
+
+
+def _build_create_config_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="odsbox-diff create-config",
+        description="Create a new config file from the bundled basic/m2m/oidc examples.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        type=str,
+        default=_DEFAULT_CONFIG_OUTPUT,
+        help=f"Output config file path (default: {_DEFAULT_CONFIG_OUTPUT}).",
+    )
+    parser.add_argument(
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Overwrite output file if it already exists.",
+    )
+    parser.add_argument(
+        "--single-auth",
+        dest="single_auth",
+        choices=["basic", "m2m", "oidc"],
+        default=None,
+        help="Generate a single server section for one auth method only.",
+    )
+
+    query_group = parser.add_mutually_exclusive_group()
+    query_group.add_argument(
+        "--with-queries",
+        dest="with_queries",
+        action="store_true",
+        default=True,
+        help="Include [queries.first] and [queries.second] sections (default).",
+    )
+    query_group.add_argument(
+        "--no-queries",
+        dest="with_queries",
+        action="store_false",
+        help="Do not include query sections.",
+    )
+
+    style_group = parser.add_mutually_exclusive_group()
+    style_group.add_argument(
+        "--include-example-comments",
+        dest="include_example_comments",
+        action="store_true",
+        default=True,
+        help="Include guidance comments in the generated config (default).",
+    )
+    style_group.add_argument(
+        "--minimal",
+        dest="include_example_comments",
+        action="store_false",
+        help="Write a compact config with no comments and only required server fields.",
+    )
+    return parser
+
+
+def _cli_create_config(raw_args: list[str]) -> None:
+    parser = _build_create_config_parser()
+    args = parser.parse_args(raw_args)
+    log = logging.getLogger(__name__)
+
+    try:
+        out = create_config_file(
+            output_path=args.output,
+            force=args.force,
+            single_auth=args.single_auth,
+            with_queries=args.with_queries,
+            include_example_comments=args.include_example_comments,
+        )
+        log.info("Created config file: %s", out)
+        sys.exit(0)
+    except FileExistsError as e:
+        log.error("%s", e)
+        sys.exit(1)
+    except Exception as e:
+        log.exception("Exception: %s", e)
+        sys.exit(-1)
 
 
 def _cli_collect(raw_args: list[str]) -> None:

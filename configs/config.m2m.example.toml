@@ -1,7 +1,7 @@
 # odsbox-diff configuration — M2M (machine-to-machine) authentication example
 #
 # Usage:
-#   uv run odsbox-diff --config config.m2m.toml -entity TestStep -id1 2 -id2 3
+#   uv run odsbox-diff --config config.m2m.example.toml -entity TestStep -id1 2 -id2 3
 
 # ── Server (connection + authentication combined) ────────────────────
 [server]
@@ -13,7 +13,7 @@ token_endpoint = "https://auth.example.com/realms/myrealm/protocol/openid-connec
 scope = ["machine2machine"]
 # client_secret is intentionally omitted — it will be retrieved from keyring.
 # To store in keyring:
-#   python -c "import keyring; keyring.set_password('odsbox-diff', 'https://auth.example.com/realms/myrealm/protocol/openid-connect/token:f0a8cec0-e980-48c4-9898-8a11f40da518', 'YOUR_SECRET')"
+#   keyring set odsbox-diff https://auth.example.com/realms/myrealm/protocol/openid-connect/token:f0a8cec0-e980-48c4-9898-8a11f40da518
 
 # ── Diff defaults ────────────────────────────────────────────────────
 [defaults]
