@@ -8,7 +8,7 @@ from .api import (
     diff_file_to_server,
     diff_server_to_server,
 )
-from .diff import collect_ods_test, diff_ods_tests
+from .diff import collect_ods_test, create_config_file, diff_ods_tests
 from .ods_diff_hierarchy import (
     collect,
     diff_dictionaries,
@@ -20,6 +20,7 @@ from .ods_diff_hierarchy import (
 __all__ = [
     "collect_ods_test",
     "collect_to_file",
+    "create_config_file",
     "diff_file_to_file",
     "diff_file_to_server",
     "diff_ods_tests",

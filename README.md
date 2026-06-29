@@ -39,7 +39,16 @@ The package requires Python 3.14+ and ships a console script `odsbox-diff`.
 
 ## Quick start
 
-1. Copy one of the example configs from `configs/` and adjust it:
+1. Create a starter config:
+
+  ```powershell
+  uv run odsbox-diff create-config
+  ```
+
+  Default output is `./odsbox-diff.config.toml` with three use-case server
+  entries: `default` (basic), `production` (m2m), and `staging` (oidc).
+
+  Or copy one of the example configs from `configs/` and adjust it:
 
    - `config.example.toml` — basic auth (single or multiple servers)
    - `config.m2m.example.toml` — OAuth2 machine-to-machine
@@ -128,6 +137,16 @@ replacing them.
 | `-v`, `--verbose` | INFO logging with timestamps. |
 | `-q`, `--quiet` | Suppress all logging. |
 
+### `odsbox-diff create-config` (config scaffolding)
+
+| Flag | Description |
+| --- | --- |
+| `-o`, `--output` | Output path (default: `./odsbox-diff.config.toml`). |
+| `--force` | Overwrite output file if it already exists. |
+| `--single-auth {basic,m2m,oidc}` | Generate only one server section. |
+| `--with-queries` / `--no-queries` | Include or skip `queries.first` and `queries.second`. |
+| `--include-example-comments` / `--minimal` | Verbose guided output or compact output without comments. |
+
 ## Exit codes
 
 | Code | Meaning |
@@ -209,6 +228,9 @@ dump_diff_as_json("diff.json", diff)
 
 Either a single `[server]` table (stored internally as the `default` server) or
 one `[servers.<name>]` table per named server. Common fields:
+
+For single-server usage, `[servers.default]` is supported and behaves the same
+as `[server]`.
 
 | Field | Type | Notes |
 | --- | --- | --- |

@@ -2,26 +2,26 @@
 # Copy this file and adjust values for your environment.
 #
 # Usage (single server):
-#   uv run odsbox-diff --config config.toml -entity TestStep -id1 2 -id2 3
+#   uv run odsbox-diff --config config.example.toml -entity TestStep -id1 2 -id2 3
 #
 # Usage (compare across two named servers):
-#   uv run odsbox-diff --config config.toml -entity TestStep -id1 2 -id2 3 --server1 production --server2 staging
+#   uv run odsbox-diff --config config.example.toml -entity TestStep -id1 production:2 -id2 staging:3
 
 # ── Single server ────────────────────────────────────────────────────
-# Use [server] when comparing two instances on the same server.
-[server]
+# Use [servers.default] when comparing two instances on the same server.
+# No need to specify the server name in id declarations, e.g. -id1 2 -id2 3.
+[servers.default]
 url = "http://localhost:57481/api"
 verify_certificate = false          # set true for production with valid TLS
 method = "basic"
 username = "admin"
 # password = "admin"               # prefer keyring over plaintext!
 # To store in keyring:
-#   python -c "import keyring; keyring.set_password('odsbox-diff', 'http://localhost:57481/api:admin', 'admin')"
+#   keyring set odsbox-diff http://localhost:57481/api:admin
 
 # ── Multiple named servers ───────────────────────────────────────────
 # Use [servers.<name>] to define two or more servers.
-# Pick them at runtime with --server1 <name> --server2 <name>.
-# If only one server is defined below, --server1/--server2 are not required.
+# Pick them at runtime as prefix in the id declarations, e.g. -id1 production:2 -id2 staging:3.
 #
 # [servers.production]
 # url = "https://prod.example.com/api"
