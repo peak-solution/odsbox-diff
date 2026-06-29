@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.1.0 (2026-06-29)
+
+### Features
+
+- Add the ability to generate a config file
+  ([#13](https://github.com/peak-solution/odsbox-diff/pull/13),
+  [`acc5428`](https://github.com/peak-solution/odsbox-diff/commit/acc5428a4cff65a81ed6bd73e566063a99483c75))
+
+
 ## v1.0.2 (2026-06-26)
 
 ### Bug Fixes
