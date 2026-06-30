@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-06-30)
+
+### Features
+
+- Fix command line help and add diff subcommand
+  ([#14](https://github.com/peak-solution/odsbox-diff/pull/14),
+  [`3e26355`](https://github.com/peak-solution/odsbox-diff/commit/3e26355b25937193ebfebf80dedba13e1f31f56b))
+
+
 ## v1.1.0 (2026-06-29)
 
 ### Features
