@@ -41,8 +41,11 @@ Run `uv run odsbox-diff --help` to see the available commands (`diff`, `collect`
 and `config`). Use `uv run odsbox-diff COMMAND --help` for command-specific
 options.
 
-**Remark:** `uvx tool install odsbox-diff` can be used to run command line tool `odsbox-diff`
-directly instead of using `uv run`.
+## Remarks 
+
+* `uv tool install odsbox-diff` can be used to run command line tool `odsbox-diff`
+  directly instead of using `uv run`.
+* `uvx odsbox-diff` can be used to run it without installing it at all.
 
 ## Quick start
 
