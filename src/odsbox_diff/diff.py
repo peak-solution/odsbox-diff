@@ -29,6 +29,7 @@ _USE_CASE_NAME_BY_AUTH: dict[str, str] = {
     "m2m": "production",
     "oidc": "staging",
 }
+_CLI_SUBCOMMANDS = ("diff", "collect", "config")
 _SERVER_FIELD_ORDER = (
     "url",
     "verify_certificate",
@@ -502,11 +503,24 @@ def diff_ods_tests(
     return 0 if not diff_result else 100
 
 
-def _build_parser() -> argparse.ArgumentParser:
+def _build_root_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="odsbox-diff",
+        description="Compare ODS hierarchies, collect snapshots, or generate starter configuration files.",
+        epilog="Use '%(prog)s COMMAND --help' for detailed command help. The 'diff' command also remains the implicit default for backward compatibility.",
+    )
+    subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
+    subparsers.add_parser("diff", help="Compare two ODS instances and write a diff result.")
+    subparsers.add_parser("collect", help="Collect an ODS instance hierarchy into a JSON or ZIP file.")
+    subparsers.add_parser("config", help="Generate a starter config file from the bundled examples.")
+    return parser
+
+
+def _build_diff_parser(prog: str = "odsbox-diff") -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog=prog,
         description="Compare two Hierarchy instances of an ASAM ODS server and write a difference result file.",
-        epilog="Returns 0 if no changes where found.",
+        epilog="Returns 0 if no changes where found. Use 'odsbox-diff --help' to discover other commands.",
     )
     parser.add_argument(
         "-c",
@@ -620,16 +634,36 @@ def cli() -> None:
     (``0`` no differences, ``100`` differences found, ``-1`` on uncaught
     exception, ``1`` on argument validation errors).
     """
-    # Dispatch to collect/create-config subcommands if requested
-    if len(sys.argv) > 1 and sys.argv[1] == "collect":
-        _cli_collect(sys.argv[2:])
-        return
-    if len(sys.argv) > 1 and sys.argv[1] == "create-config":
-        _cli_create_config(sys.argv[2:])
+    raw_args = sys.argv[1:]
+    root_parser = _build_root_parser()
+
+    if not raw_args:
+        root_parser.print_help()
+        sys.exit(1)
+
+    first_arg = raw_args[0]
+    if first_arg in ("-h", "--help"):
+        root_parser.parse_args(raw_args)
         return
 
-    parser = _build_parser()
-    args = parser.parse_args()
+    if first_arg == "collect":
+        _cli_collect(raw_args[1:])
+        return
+    if first_arg == "config":
+        _cli_create_config(raw_args[1:])
+        return
+
+    diff_args = raw_args
+    diff_prog = "odsbox-diff"
+    if first_arg == "diff":
+        diff_args = raw_args[1:]
+        diff_prog = "odsbox-diff diff"
+    elif not first_arg.startswith("-"):
+        root_parser.parse_args(raw_args[:1])
+        return
+
+    parser = _build_diff_parser(prog=diff_prog)
+    args = parser.parse_args(diff_args)
 
     # Load config (connection + defaults)
     app_config = load_config(args.config)
@@ -859,7 +893,7 @@ def _build_collect_parser() -> argparse.ArgumentParser:
 
 def _build_create_config_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="odsbox-diff create-config",
+        prog="odsbox-diff config",
         description="Create a new config file from the bundled basic/m2m/oidc examples.",
     )
     parser.add_argument(
