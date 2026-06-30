@@ -735,7 +735,7 @@ oidc = [
 
 [[package]]
 name = "odsbox-diff"
-version = "1.0.2"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "deepdiff" },

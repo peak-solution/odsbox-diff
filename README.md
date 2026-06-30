@@ -37,12 +37,16 @@ pip install odsbox-diff
 
 The package requires Python 3.14+ and ships a console script `odsbox-diff`.
 
+Run `uv run odsbox-diff --help` to see the available commands (`diff`, `collect`,
+and `config`). Use `uv run odsbox-diff COMMAND --help` for command-specific
+options.
+
 ## Quick start
 
 1. Create a starter config:
 
   ```powershell
-  uv run odsbox-diff create-config
+  uv run odsbox-diff config
   ```
 
   Default output is `./odsbox-diff.config.toml` with three use-case server
@@ -60,7 +64,7 @@ The package requires Python 3.14+ and ships a console script `odsbox-diff`.
 3. Run the diff:
 
    ```powershell
-   uv run odsbox-diff `
+  uv run odsbox-diff diff `
        --config my-config.toml `
        --entity TestStep `
        -id1 5 `
@@ -70,7 +74,7 @@ The package requires Python 3.14+ and ships a console script `odsbox-diff`.
    With multiple named servers, prefix instance IDs with the server name:
 
    ```powershell
-   uv run odsbox-diff `
+     uv run odsbox-diff diff `
        --config my-config.toml `
        --entity TestStep `
        -id1 prod:1898 `
@@ -80,12 +84,15 @@ The package requires Python 3.14+ and ships a console script `odsbox-diff`.
    Compare two saved JSON files (no server connection needed):
 
    ```powershell
-   uv run odsbox-diff `
+     uv run odsbox-diff diff `
        --config my-config.toml `
        --entity TestStep `
        -id1 file:baseline.json `
        -id2 file:current.json
    ```
+
+     The historical form without the explicit `diff` subcommand still works for
+     backward compatibility.
 
    Collect a hierarchy to a file and self-validate:
 
@@ -100,7 +107,7 @@ The package requires Python 3.14+ and ships a console script `odsbox-diff`.
 
 ## CLI reference
 
-### `odsbox-diff` (diff mode)
+### `odsbox-diff diff` (recommended diff mode)
 
 | Flag | Description |
 | --- | --- |
@@ -121,6 +128,9 @@ CLI flags always override config defaults. List options (`exclude_path`,
 `exclude_regex_path`, `cached-related`) extend the config defaults rather than
 replacing them.
 
+For backward compatibility, `odsbox-diff --config ... --entity ... -id1 ... -id2 ...`
+still runs the diff command implicitly.
+
 ### `odsbox-diff collect` (collect mode)
 
 | Flag | Description |
@@ -137,7 +147,7 @@ replacing them.
 | `-v`, `--verbose` | INFO logging with timestamps. |
 | `-q`, `--quiet` | Suppress all logging. |
 
-### `odsbox-diff create-config` (config scaffolding)
+### `odsbox-diff config` (config scaffolding)
 
 | Flag | Description |
 | --- | --- |

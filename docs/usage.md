@@ -14,6 +14,9 @@ diffs.  It works in three modes:
 Each mode is available both via the **CLI** (`odsbox-diff` command) and the
 **Python API** (importable functions for use in pytest and scripts).
 
+Run `uv run odsbox-diff --help` to list the available commands. For detailed
+options on one command, use `uv run odsbox-diff COMMAND --help`.
+
 ---
 
 ## Installation & Setup
@@ -42,7 +45,7 @@ environment:
 Or generate a new starter config directly:
 
 ```powershell
-uv run odsbox-diff create-config
+uv run odsbox-diff config
 ```
 
 By default this writes `./odsbox-diff.config.toml` with three use-case server
@@ -71,12 +74,13 @@ keyring set odsbox-diff "https://auth.example.com/token:my-client-id"
 
 ## CLI: Diff Mode
 
-The default mode compares two hierarchy instances and writes a diff result file.
+The recommended form is the explicit `diff` subcommand. The older bare form
+without `diff` still works for backward compatibility.
 
 ### Two server instances
 
 ```powershell
-uv run odsbox-diff `
+uv run odsbox-diff diff `
     --config my-config.toml `
     --entity TestStep `
     -id1 5 `
@@ -86,7 +90,7 @@ uv run odsbox-diff `
 With multiple named servers:
 
 ```powershell
-uv run odsbox-diff `
+uv run odsbox-diff diff `
     --config my-config.toml `
     --entity TestStep `
     -id1 prod:1898 `
@@ -99,7 +103,7 @@ Use the `file:` prefix to load a side from a previously saved JSON or ZIP file.
 No server connection is opened for file-based sides.
 
 ```powershell
-uv run odsbox-diff `
+uv run odsbox-diff diff `
     --config my-config.toml `
     --entity TestStep `
     -id1 file:baseline.json `
@@ -114,7 +118,7 @@ the `[server]` section can be omitted.
 Mix a file source with a server source:
 
 ```powershell
-uv run odsbox-diff `
+uv run odsbox-diff diff `
     --config my-config.toml `
     --entity TestStep `
     -id1 file:baseline.json `
@@ -208,14 +212,14 @@ uv run odsbox-diff collect `
 
 ## CLI: Create Config
 
-The `create-config` subcommand creates a new TOML config from the three example
+The `config` subcommand creates a new TOML config from the three example
 files in `configs/`.
 
 ```powershell
-uv run odsbox-diff create-config
+uv run odsbox-diff config
 ```
 
-### Create-config flags
+### Config flags
 
 | Flag | Description |
 | --- | --- |

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,6 +14,7 @@ from odsbox_diff.diff import (
     _cli_create_config,
     _parse_id_or_file,
     _parse_server_id,
+    cli,
     collect_ods_test,
     create_config_file,
     diff_ods_tests,
@@ -414,3 +416,77 @@ class TestCreateConfig:
             _cli_create_config(["--output", str(output)])
 
         assert ex.value.code == 1
+
+
+class TestCliHelpFlow:
+    def test_top_level_help_lists_subcommands(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with patch("sys.argv", ["odsbox-diff", "--help"]):
+            with pytest.raises(SystemExit) as ex:
+                cli()
+
+        assert ex.value.code == 0
+        captured = capsys.readouterr()
+        assert "diff" in captured.out
+        assert "collect" in captured.out
+        assert "config" in captured.out
+        assert "COMMAND" in captured.out
+
+    def test_unknown_subcommand_lists_valid_choices(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with patch("sys.argv", ["odsbox-diff", "unknown"]):
+            with pytest.raises(SystemExit) as ex:
+                cli()
+
+        assert ex.value.code == 2
+        captured = capsys.readouterr()
+        assert "invalid choice" in captured.err
+        assert "diff" in captured.err
+        assert "collect" in captured.err
+        assert "config" in captured.err
+
+    def test_explicit_diff_help_uses_diff_parser(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with patch("sys.argv", ["odsbox-diff", "diff", "--help"]):
+            with pytest.raises(SystemExit) as ex:
+                cli()
+
+        assert ex.value.code == 0
+        captured = capsys.readouterr()
+        assert "--entity" in captured.out
+        assert "-id1" in captured.out
+        assert "odsbox-diff diff" in captured.out
+
+    def test_no_args_prints_top_level_help(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with patch("sys.argv", ["odsbox-diff"]):
+            with pytest.raises(SystemExit) as ex:
+                cli()
+
+        assert ex.value.code == 1
+        captured = capsys.readouterr()
+        assert "COMMAND" in captured.out
+        assert "collect" in captured.out
+
+    def test_implicit_diff_invocation_still_works(self, tmp_path: Path) -> None:
+        defaults = SimpleNamespace(
+            verbose=False,
+            quiet=False,
+            result_file=str(tmp_path / "default-result.json"),
+            dump_dictionaries=False,
+            no_bulk=False,
+            bulk_progress_bar=False,
+            exclude_regex_paths=[],
+            exclude_paths=[],
+            cached_related=[],
+        )
+        app_config = SimpleNamespace(defaults=defaults, servers={"default": MagicMock()}, queries=None)
+
+        with (
+            patch(
+                "sys.argv", ["odsbox-diff", "--config", "cfg.toml", "--entity", "TestStep", "-id1", "1", "-id2", "2"]
+            ),
+            patch("odsbox_diff.diff.load_config", return_value=app_config),
+            patch("odsbox_diff.diff.diff_ods_tests", return_value=0) as mock_diff,
+        ):
+            with pytest.raises(SystemExit) as ex:
+                cli()
+
+        assert ex.value.code == 0
+        assert mock_diff.call_count == 1
