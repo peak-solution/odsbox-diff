@@ -49,12 +49,18 @@ _SERVER_FIELD_ORDER = (
 
 
 def _example_config_path(auth_method: str) -> Path:
-    root = Path(__file__).resolve().parents[2]
     filename = _EXAMPLE_FILE_BY_AUTH[auth_method]
-    path = root / "configs" / filename
-    if not path.is_file():
-        raise FileNotFoundError(f"Example config file not found: {path}")
-    return path
+    candidate_roots = [
+        Path(__file__).resolve().parent / "configs",
+        Path(__file__).resolve().parents[2] / "configs",
+    ]
+    for config_dir in candidate_roots:
+        path = config_dir / filename
+        if path.is_file():
+            return path
+
+    searched = ", ".join(str(config_dir / filename) for config_dir in candidate_roots)
+    raise FileNotFoundError(f"Example config file not found: {searched}")
 
 
 def _load_example_template(auth_method: str) -> dict[str, Any]:

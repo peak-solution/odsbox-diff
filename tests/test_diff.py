@@ -362,6 +362,36 @@ class TestCreateConfig:
         assert "defaults" in raw
         assert set(raw["queries"].keys()) == {"first", "second"}
 
+    def test_example_config_path_returns_package_copy_when_present(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import odsbox_diff.diff as diff_module
+
+        filename = diff_module._EXAMPLE_FILE_BY_AUTH["basic"]
+        package_path = Path(diff_module.__file__).resolve().parent / "configs" / filename
+        repo_root_path = Path(diff_module.__file__).resolve().parents[2] / "configs" / filename
+
+        def fake_is_file(self: Path) -> bool:
+            return self == package_path
+
+        monkeypatch.setattr(Path, "is_file", fake_is_file)
+
+        assert diff_module._example_config_path("basic") == package_path
+        assert diff_module._example_config_path("basic") != repo_root_path
+
+    def test_example_config_path_falls_back_to_repo_root_copy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import odsbox_diff.diff as diff_module
+
+        filename = diff_module._EXAMPLE_FILE_BY_AUTH["basic"]
+        package_path = Path(diff_module.__file__).resolve().parent / "configs" / filename
+        repo_root_path = Path(diff_module.__file__).resolve().parents[2] / "configs" / filename
+
+        def fake_is_file(self: Path) -> bool:
+            return self == repo_root_path
+
+        monkeypatch.setattr(Path, "is_file", fake_is_file)
+
+        assert diff_module._example_config_path("basic") == repo_root_path
+        assert diff_module._example_config_path("basic") != package_path
+
     def test_create_config_single_auth_minimal_no_queries(self, tmp_path: Path) -> None:
         output = tmp_path / "single-auth.toml"
 
