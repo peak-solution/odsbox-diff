@@ -4,7 +4,7 @@
 #   uv run odsbox-diff --config config.m2m.example.toml -entity TestStep -id1 2 -id2 3
 
 # ── Server (connection + authentication combined) ────────────────────
-[server]
+[servers.default]
 url = "https://my.asam.server.com:8443/api"
 verify_certificate = true
 method = "m2m"

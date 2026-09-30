@@ -4,7 +4,7 @@
 #   uv run odsbox-diff --config config.oidc.example.toml -entity TestStep -id1 2 -id2 3
 
 # ── Server (connection + authentication combined) ────────────────────
-[server]
+[servers.default]
 url = "https://server:8015/api"
 verify_certificate = true
 method = "oidc"

@@ -52,7 +52,6 @@ def _example_config_path(auth_method: str) -> Path:
     filename = _EXAMPLE_FILE_BY_AUTH[auth_method]
     candidate_roots = [
         Path(__file__).resolve().parent / "configs",
-        Path(__file__).resolve().parents[2] / "configs",
     ]
     for config_dir in candidate_roots:
         path = config_dir / filename

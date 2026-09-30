@@ -26,14 +26,30 @@ username = "admin"
 # [servers.production]
 # url = "https://prod.example.com/api"
 # verify_certificate = true
-# method = "basic"
-# username = "admin"
+# method = "m2m"
+# client_id = "f0a8cec0-e980-48c4-9898-8a11f40da518"
+# token_endpoint = "https://auth.example.com/realms/myrealm/protocol/openid-connect/token"
+# scope = ["machine2machine"]
+# # client_secret is intentionally omitted — it will be retrieved from keyring.
+# # To store in keyring:
+# #   keyring set odsbox-diff https://auth.example.com/realms/myrealm/protocol/openid-connect/token:f0a8cec0-e980-48c4-9898-8a11f40da518
 #
 # [servers.staging]
 # url = "https://staging.example.com/api"
 # verify_certificate = false
-# method = "basic"
-# username = "admin"
+# method = "oidc"
+# client_id = "14df520f-f6b0-4135-be1b-bff3f5cc474c"
+# redirect_uri = "http://127.0.0.1:1234"
+# redirect_url_allow_insecure = true    # needed for localhost redirect
+# scope = ["openid", "profile"]
+# login_timeout = 60
+# webfinger_path_prefix = "/ods"        # optional, for non-standard WebFinger paths
+# # authorization_endpoint and token_endpoint are auto-discovered via WebFinger
+# # unless explicitly set here:
+# # authorization_endpoint = "https://auth.example.com/authorize"
+# # token_endpoint = "https://auth.example.com/token"
+# # client_secret is optional for OIDC; if needed, store it in keyring:
+# #   keyring set https://auth.example.com/token:14df520f-f6b0-4135-be1b-bff3f5cc474c
 
 
 # ── Diff defaults ────────────────────────────────────────────────────
