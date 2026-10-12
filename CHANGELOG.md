@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.1 (2026-10-12)
+
+### Bug Fixes
+
+- Fix packaged config examples for installed CLI usage
+  ([#23](https://github.com/peak-solution/odsbox-diff/pull/23),
+  [`48e4e94`](https://github.com/peak-solution/odsbox-diff/commit/48e4e94e9fdc248d4513498b8b3c586c45ffba04))
+
+
 ## v1.2.0 (2026-06-30)
 
 ### Features
